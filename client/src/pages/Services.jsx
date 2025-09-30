@@ -1,45 +1,73 @@
-import React from 'react';
+import React from "react";
+import { Leaf, CloudSun, User, Search, BarChart3, Bug } from "lucide-react"; // icons
 
 const services = [
   {
-    title: 'Crop Management',
-    description: 'Track, add, and manage your crops with detailed records and analytics.'
+    title: "Crop Management",
+    description:
+      "Track, add, and manage your crops with detailed records and analytics.",
+    icon: <Leaf className="w-10 h-10 text-green-600" />,
   },
   {
-    title: 'Disease & Pest Diagnosis',
-    description: 'Upload crop images for instant AI-powered disease and pest analysis.'
+    title: "Disease & Pest Diagnosis",
+    description:
+      "Upload crop images for instant AI-powered disease and pest analysis.",
+    icon: <Bug className="w-10 h-10 text-red-500" />,
   },
   {
-    title: 'Weather Forecasts',
-    description: 'Get location-based weather updates and farming advisories.'
+    title: "Weather Forecasts",
+    description:
+      "Get location-based weather updates and farming advisories.",
+    icon: <CloudSun className="w-10 h-10 text-yellow-500" />,
   },
   {
-    title: 'Profile & Farm Records',
-    description: 'Maintain your farmer profile and keep all farm records organized.'
+    title: "Profile & Farm Records",
+    description:
+      "Maintain your farmer profile and keep all farm records organized.",
+    icon: <User className="w-10 h-10 text-blue-500" />,
   },
   {
-    title: 'Smart Search',
-    description: 'Find crops, weather, and farming info using our intelligent search tools.'
+    title: "Smart Search",
+    description:
+      "Find crops, weather, and farming info using our intelligent search tools.",
+    icon: <Search className="w-10 h-10 text-purple-500" />,
   },
   {
-    title: 'Admin Dashboard',
-    description: 'Advanced tools for farm managers and admins to oversee operations.'
-  }
+    title: "Admin Dashboard",
+    description:
+      "Advanced tools for farm managers and admins to oversee operations.",
+    icon: <BarChart3 className="w-10 h-10 text-orange-500" />,
+  },
 ];
 
 export default function Services() {
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center py-12">
-      <h1 className="text-4xl font-bold text-green-800 mb-6">Our Services</h1>
-      <p className="text-green-700 mb-8 text-center max-w-2xl">AgriSmart offers a suite of digital tools to empower farmers, improve productivity, and simplify farm management.</p>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-5xl">
-        {services.map((service, idx) => (
-          <div key={idx} className="bg-white rounded-xl shadow-lg p-8 flex flex-col items-center hover:scale-105 transition-transform">
-            <h2 className="text-2xl font-semibold text-green-700 mb-3">{service.title}</h2>
-            <p className="text-green-600 text-center">{service.description}</p>
-          </div>
-        ))}
+    <section className="bg-gradient-to-b from-green-50 to-white py-16" id="services">
+      <div className="max-w-6xl mx-auto px-6 text-center">
+        <h1 className="text-4xl font-bold text-green-800 mb-4">Our Services</h1>
+        <p className="text-black mb-12 max-w-2xl mx-auto">
+          AgriSmart offers a suite of digital tools to empower farmers, improve productivity, 
+          and simplify farm management.
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
+          {services.map((service, idx) => (
+            <div
+              key={idx}
+              className="bg-white rounded-2xl shadow-md p-8 flex flex-col items-center 
+                         hover:shadow-xl hover:-translate-y-2 transition-all duration-300"
+            >
+              <div className="mb-4">{service.icon}</div>
+              <h2 className="text-xl font-semibold text-green-700 mb-2">
+                {service.title}
+              </h2>
+              <p className="text-gray-600 text-sm text-center leading-relaxed">
+                {service.description}
+              </p>
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
