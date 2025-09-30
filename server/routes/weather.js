@@ -12,5 +12,5 @@ module.exports = (app, url) => {
 	});
 	
 	// Weather route
-	app.post(`${url}`, getWeather);
+	app.post(`${url}`, verifyUser, getWeather);
 };
