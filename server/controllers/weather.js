@@ -5,7 +5,7 @@ const advisoryAI = require("../apis/openai");
 // Fetch current + forecast weather and add AI recommendations
 exports.getWeather = async (req, res) => {
   try {
-    const { location, cropType } = req.body;
+    const { location } = req.body;
 
     if (!location) {
       return res.status(400).json({
@@ -37,7 +37,7 @@ exports.getWeather = async (req, res) => {
     try {
       recommendations = await advisoryAI.processWeatherRecommendations(
         weatherData,
-        { location, cropType }
+        { location }
       );
     } catch (aiError) {
       console.error("AI recommendation failed:", aiError.message);
