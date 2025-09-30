@@ -3,7 +3,6 @@ import api from "../services/api";
 
 const WeatherWidget = () => {
   const [location, setLocation] = useState("");
-  const [cropType, setCropType] = useState("");
   const [weather, setWeather] = useState(null);
   const [recommendations, setRecommendations] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -14,7 +13,7 @@ const WeatherWidget = () => {
     setLoading(true);
     setError("");
     try {
-      const res = await api.post("/api/weather", { location, cropType });
+      const res = await api.post("/api/v1/weather", { location});
       if (res.data.success) {
         setWeather(res.data.weather || null);
         setRecommendations(res.data.recommendations || null);
@@ -47,13 +46,6 @@ const WeatherWidget = () => {
           onChange={(e) => setLocation(e.target.value)}
           className="flex-1 p-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500"
           required
-        />
-        <input
-          type="text"
-          placeholder="Crop type (optional)..."
-          value={cropType}
-          onChange={(e) => setCropType(e.target.value)}
-          className="flex-1 p-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500"
         />
         <button
           type="submit"
