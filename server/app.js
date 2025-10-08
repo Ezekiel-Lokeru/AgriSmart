@@ -1,7 +1,8 @@
+require('dotenv').config();
+console.log('DEBUG OPENWEATHER_API_KEY:', process.env.OPENWEATHER_API_KEY ? '✅ loaded' : '❌ missing');
+console.log('DEBUG (first 6 chars):', (process.env.OPENWEATHER_API_KEY || '').slice(0,6).replace(/./g, '*'));
 const express = require("express");
 const path = require("path");
-const dotenv = require('dotenv');
-dotenv.config();
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser')
 const cors = require("cors");
