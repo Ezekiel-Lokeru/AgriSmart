@@ -1,5 +1,6 @@
 import React from "react";
 import { Sprout } from "lucide-react";
+import aboutImg from "../assets/about.jpg";
 
 export default function About() {
   return (
@@ -9,7 +10,7 @@ export default function About() {
         {/* Left side - Image/Illustration */}
         <div className="relative flex justify-center">
           <img
-            src="https://images.unsplash.com/photo-1590556409324-6e4d54d0f486?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"
+            src={aboutImg}
             alt="Farmers in the field"
             className="rounded-2xl shadow-lg object-cover w-full h-[400px]"
           />
