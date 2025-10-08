@@ -1,11 +1,12 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
 import diagnoseImg from "../assets/diagnoseCrop.jpg";
 import weatherImg from "../assets/weather.jpg";
 import advisoryImg from "../assets/diagnose.jpg";
 import recordsImg from "../assets/records.jpg";
 import servicesImg from "../assets/farmServices.jpg";
+// eslint-disable-next-line no-unused-vars
+import { motion } from "framer-motion";
 
 // Demo images for services (replace with your own later)
 const services = [
