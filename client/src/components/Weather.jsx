@@ -1,22 +1,47 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import api from "../services/api";
 
 const WeatherWidget = () => {
   const [location, setLocation] = useState("");
-  const [weather, setWeather] = useState(null);
+  const [current, setCurrent] = useState(null);
+  const [forecast, setForecast] = useState([]);
   const [recommendations, setRecommendations] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // ✅ Load saved weather data on component mount
+  useEffect(() => {
+    const savedData = localStorage.getItem("weatherData");
+    if (savedData) {
+      const parsed = JSON.parse(savedData);
+      setLocation(parsed.location);
+      setCurrent(parsed.current);
+      setForecast(parsed.forecast);
+      setRecommendations(parsed.recommendations);
+    }
+  }, []);
 
   const fetchWeather = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
     try {
-      const res = await api.post("/api/v1/weather", { location});
+      const res = await api.post("/v1/weather", { location });
       if (res.data.success) {
-        setWeather(res.data.weather || null);
-        setRecommendations(res.data.recommendations || null);
+        const newData = {
+          location,
+          current: res.data.current,
+          forecast: res.data.forecast,
+          recommendations: res.data.recommendations?.response || res.data.recommendations,
+        };
+
+        // ✅ Save to state
+        setCurrent(newData.current);
+        setForecast(newData.forecast);
+        setRecommendations(newData.recommendations);
+
+        // ✅ Save to localStorage
+        localStorage.setItem("weatherData", JSON.stringify(newData));
       } else {
         setError("Could not fetch weather data.");
       }
@@ -28,17 +53,19 @@ const WeatherWidget = () => {
     }
   };
 
+  const clearWeather = () => {
+    localStorage.removeItem("weatherData");
+    setCurrent(null);
+    setForecast([]);
+    setRecommendations(null);
+    setLocation("");
+  };
+
   return (
     <div className="bg-white shadow-lg rounded-2xl p-6 w-full max-w-3xl mx-auto">
-      <h2 className="text-xl font-bold text-green-700 mb-4">
-        🌦️ Weather & Advisory
-      </h2>
+      <h2 className="text-xl font-bold text-green-700 mb-4">🌦️ Weather & Advisory</h2>
 
-      {/* Input Form */}
-      <form
-        onSubmit={fetchWeather}
-        className="flex flex-col sm:flex-row gap-3 mb-6"
-      >
+      <form onSubmit={fetchWeather} className="flex flex-col sm:flex-row gap-3 mb-6">
         <input
           type="text"
           placeholder="Enter your location..."
@@ -54,121 +81,125 @@ const WeatherWidget = () => {
         >
           {loading ? "Loading..." : "Get Weather"}
         </button>
+        {current && (
+          <button
+            type="button"
+            onClick={clearWeather}
+            className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-lg"
+          >
+            Clear
+          </button>
+        )}
       </form>
 
-      {/* Error Message */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg mb-4">
           {error}
         </div>
       )}
 
-      {/* Weather Results */}
-      {weather && (
+      {current && (
         <div>
-          {/* Current Weather */}
-          {weather.list && weather.list.length > 0 && (
-            <div className="bg-green-50 p-4 rounded-xl border border-green-200 mb-6">
-              <h3 className="text-lg font-semibold text-green-700 mb-2">
-                📍 {weather.city?.name}, {weather.city?.country}
-              </h3>
-              <p className="text-green-800">
-                Current Temp:{" "}
-                <span className="font-bold">{weather.list[0].main.temp}°C</span>
-              </p>
-              <p className="capitalize text-green-700">
-                {weather.list[0].weather[0].description}
-              </p>
-            </div>
-          )}
+          <div className="bg-green-50 p-4 rounded-xl border border-green-200 mb-6">
+            <h3 className="text-lg font-semibold text-green-700 mb-2">
+              📍 {location}
+            </h3>
+            <p className="text-green-800">
+              Current Temp: <span className="font-bold">{current.main.temp}°C</span>
+            </p>
+            <p className="capitalize text-green-700">
+              {current.weather[0].description}
+            </p>
+          </div>
 
-          {/* Forecast */}
-          {weather.list && weather.list.length > 0 ? (
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-green-700 mb-3">
-                📅 5-Day Forecast
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-                {weather.list.slice(0, 5).map((item, i) => (
-                  <div
-                    key={i}
-                    className="bg-white border border-green-200 rounded-lg p-3 shadow-sm text-center"
-                  >
-                    <p className="font-medium text-green-700">
-                      {new Date(item.dt * 1000).toLocaleDateString("en-US", {
-                        weekday: "short",
-                      })}
-                    </p>
-                    <p className="text-sm">{item.main.temp}°C</p>
-                    <p className="text-xs capitalize text-gray-600">
-                      {item.weather[0].description}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <p className="text-gray-500 mb-6">No forecast data available.</p>
-          )}
+          {/* 5-Day Forecast */}
+<h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+  📅 5-Day Forecast
+</h3>
 
-          {/* AI Recommendations */}
-          {recommendations ? (
+<div className="flex flex-wrap gap-3 justify-start">
+  {forecast
+    // Pick one forecast per day (every 8th item = 24h)
+    .filter((_, idx) => idx % 8 === 0)
+    .slice(0, 6)
+    .map((day, index) => (
+      <div
+        key={index}
+        className="bg-white shadow-sm border border-gray-200 rounded-lg p-3 w-[120px] text-center"
+      >
+        <p className="font-semibold text-gray-700">
+          {new Date(day.dt * 1000).toLocaleDateString("en-US", {
+            weekday: "short",
+          })}
+        </p>
+        <p className="text-gray-500 text-sm">
+          {day.main.temp.toFixed(2)}°C
+        </p>
+        <p className="text-gray-400 text-sm">
+          {day.weather[0].description}
+        </p>
+      </div>
+    ))}
+</div>
+
+
+          {recommendations && (
             <div>
-              <h3 className="text-lg font-semibold text-green-700 mb-3">
-                🌱 AI Recommendations
-              </h3>
-              <div className="grid gap-4 sm:grid-cols-2">
-                {Array.isArray(recommendations) ? (
-                  recommendations.map((rec, i) => {
-                    let icon = "✅";
-                    let color = "text-green-600";
+              <h3 className="text-lg font-semibold text-green-700 mb-3">🌱 AI Recommendations</h3>
+              <div className="flex flex-col items-center space-y-3">
+                {Array.isArray(recommendations)
+                  ? recommendations.map((rec, i) => {
+                      let icon = "✅";
+                      let color = "text-green-600";
 
-                    if (/irrigation|water/i.test(rec)) {
-                      icon = "💧";
-                      color = "text-blue-600";
-                    } else if (/fertilizer|soil|nutrient/i.test(rec)) {
-                      icon = "🌾";
-                      color = "text-yellow-700";
-                    } else if (/pest|disease|spray/i.test(rec)) {
-                      icon = "🐛";
-                      color = "text-red-600";
-                    } else if (/harvest|plant|sow/i.test(rec)) {
-                      icon = "🧑‍🌾";
-                      color = "text-green-700";
-                    } else if (/rain|temperature|weather/i.test(rec)) {
-                      icon = "☁️";
-                      color = "text-gray-600";
-                    }
+                      if (/irrigation|water/i.test(rec)) {
+                        icon = "💧";
+                        color = "text-blue-600";
+                      } else if (/fertilizer|soil|nutrient/i.test(rec)) {
+                        icon = "🌾";
+                        color = "text-yellow-700";
+                      } else if (/pest|disease|spray/i.test(rec)) {
+                        icon = "🐛";
+                        color = "text-red-600";
+                      } else if (/harvest|plant|sow/i.test(rec)) {
+                        icon = "🧑‍🌾";
+                        color = "text-green-700";
+                      } else if (/rain|temperature|weather/i.test(rec)) {
+                        icon = "☁️";
+                        color = "text-gray-600";
+                      }
 
-                    return (
+                      return (
+                        <div
+                          key={i}
+                          className="bg-green-50 border border-green-200 rounded-xl p-4 shadow-sm hover:shadow-md transition w-full max-w-3xl mx-auto"
+                        >
+                          <div className="flex items-start gap-3">
+                            <span className={`${color} text-xl`}>{icon}</span>
+                            <p className="text-green-900 leading-relaxed">{rec}</p>
+                          </div>
+                        </div>
+                      );
+                    })
+                  : Object.entries(
+                      typeof recommendations === "object"
+                        ? recommendations
+                        : { Summary: recommendations }
+                    ).map(([key, value], i) => (
                       <div
                         key={i}
-                        className="bg-green-50 border border-green-200 rounded-xl p-4 shadow-sm hover:shadow-md transition"
+                        className="bg-green-50 border border-green-200 rounded-xl p-4 shadow-sm hover:shadow-md transition w-full max-w-3xl mx-auto"
                       >
-                        <div className="flex items-start gap-3">
-                          <span className={`${color} text-xl`}>{icon}</span>
-                          <p className="text-green-900 leading-relaxed">{rec}</p>
-                        </div>
+                        <h4 className="font-semibold text-green-700 capitalize mb-2">
+                          {key.replace(/_/g, " ")}
+                        </h4>
+                        <p className="text-green-900 leading-relaxed whitespace-pre-line">
+                          {value}
+                        </p>
                       </div>
-                    );
-                  })
-                ) : (
-                  Object.entries(recommendations).map(([key, value], i) => (
-                    <div
-                      key={i}
-                      className="bg-green-50 border border-green-200 rounded-xl p-4 shadow-sm hover:shadow-md transition"
-                    >
-                      <h4 className="font-semibold text-green-700 capitalize mb-2">
-                        {key.replace(/_/g, " ")}
-                      </h4>
-                      <p className="text-green-900 leading-relaxed">{value}</p>
-                    </div>
-                  ))
-                )}
+                    ))}
               </div>
             </div>
-          ) : (
-            <p className="text-gray-500">No AI recommendations available.</p>
           )}
         </div>
       )}
