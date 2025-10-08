@@ -1,6 +1,6 @@
 const { supabase } = require('./supabase');
-const { app, weather, openapi } = require('./app');
+const { app, plantid, weather, gemini } = require('./app');
 
 module.exports = {
-	supabase, app, weather, openapi
+	supabase, app, weather, gemini, plantid
 }
