@@ -1,4 +1,4 @@
-const { crops: { addCrop, getCrops, analyzeDisease, getAnalysisHistory, handleMulterUpload, addCropAndDiagnose, deleteCrop } } = require('../controllers');
+const { addCrop, getCrops, analyzeDisease, getAnalysisHistory, handleMulterUpload, addCropAndDiagnose, deleteCrop }  = require('../controllers/crops');
 const { verifyUser } = require('../middlewares');
 
 // @description a modular function that registers all the crop routes
