@@ -15,18 +15,25 @@ import Services from './pages/Services';
 import Settings from './pages/Settings';
 import ProtectedRoute from './components/ProtectedRoute';
 import './index.css';
-import Navbar from './components/Navbar';
-import Layout from './components/Layout';
+import SidebarLayout from './components/SidebarLayout';
+import NavbarLayout from './components/NavbarLayout';
 
 
 function App() {
 
   return (
     <Router>
-      <Navbar />
       <Routes>
-       <Route element={<Layout />}>
-          <Route
+       <Route element={<NavbarLayout />}>
+       <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/search" element={<Search />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/services" element={<Services />} />
+        </Route>
+        <Route element={<SidebarLayout />}>
+         <Route
             path="/dashboard"
             element={
               <ProtectedRoute>
@@ -59,12 +66,6 @@ function App() {
             }
           />
         </Route>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/search" element={<Search />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/services" element={<Services />} />
         <Route path="/admin" element={
           <ProtectedRoute requireAdmin>
             <AdminDashboard />
