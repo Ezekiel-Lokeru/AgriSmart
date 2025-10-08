@@ -1,8 +1,8 @@
 // crop.controller.js
-const { supabase } = require('../configs');
+const { supabase } = require('../configs/supabase');
 const multer = require('multer');
 const axios = require('axios');
-const { plantAnalyzer } = require('../apis');
+const  plantAnalyzer  = require('../apis/plant');
 
 // Configure multer for image upload (memory storage)
 const upload = multer({
@@ -36,7 +36,6 @@ const handleMulterUpload = (req, res, next) => {
 function getPublicUrlForFile(bucket, path) {
   try {
     const { data } = supabase.storage.from(bucket).getPublicUrl(path);
-    // supabase client versions differ in field name; support both
     return data?.publicUrl || data?.publicURL || null;
   } catch (err) {
     console.error('getPublicUrl error:', err);
@@ -54,11 +53,9 @@ const getCurrentSeason = () => {
 
 /**
  * Add crop and diagnose in one request
- * - Requires a file upload in req.file
  */
 const addCropAndDiagnose = async (req, res, next) => {
   try {
-    // Validate required fields
     const { crop_name, planting_date, plot_size } = req.body;
     if (!crop_name || !planting_date || !plot_size || !req.file) {
       return res.status(400).json({
@@ -67,7 +64,7 @@ const addCropAndDiagnose = async (req, res, next) => {
       });
     }
 
-    // 1) Insert crop first to get crop ID
+    // 1) Insert crop first
     const { data: cropData, error: cropError } = await supabase
       .from('crops')
       .insert({
@@ -87,21 +84,22 @@ const addCropAndDiagnose = async (req, res, next) => {
       });
     }
 
-    // 2) Analyze disease using the uploaded image buffer (do this before upload so analyzer gets raw buffer)
-    const analysis = await plantAnalyzer.analyzeDiseaseImage(
-      req.file.buffer,
-      {
+    // 2) Try disease analysis (don’t block flow if it fails)
+    let analysis = { plantIdAnalysis: null, aiRecommendations: null };
+    try {
+      analysis = await plantAnalyzer.analyzeDiseaseImage(req.file.buffer, {
         cropType: cropData.crop_name,
         location: req.user.location,
         season: getCurrentSeason()
-      }
-    );
+      });
+    } catch (err) {
+      console.error('Plant.id analysis failed:', err.message);
+    }
 
-    // 3) Upload file to Supabase Storage using crop id in filename
+    // 3) Upload file to Supabase
     const filename = `${req.user.id}/${cropData.id}/${Date.now()}-${req.file.originalname}`;
-
     const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('crop-images')
+      .from('cropsImages')
       .upload(filename, req.file.buffer, {
         contentType: req.file.mimetype,
         upsert: false
@@ -109,14 +107,12 @@ const addCropAndDiagnose = async (req, res, next) => {
 
     if (uploadError) {
       console.error('Supabase upload error:', uploadError);
-      // We created a crop already; you may choose to rollback crop here if desired.
       return res.status(400).json({ success: false, error: uploadError.message });
     }
 
-    // 4) Get public URL for uploaded image
-    const publicUrl = getPublicUrlForFile('crop-images', filename) || uploadData?.path || null;
+    const publicUrl = getPublicUrlForFile('cropsImages', filename) || uploadData?.path || null;
 
-    // 5) Update crop row with image_url (if publicUrl exists)
+    // 4) Update crop row with image_url
     if (publicUrl) {
       await supabase
         .from('crops')
@@ -124,23 +120,22 @@ const addCropAndDiagnose = async (req, res, next) => {
         .eq('id', cropData.id);
     }
 
-    // 6) Save analysis results into disease_analyses
-    const { data: analysisData, error: analysisError } = await supabase
-      .from('disease_analyses')
-      .insert({
-        crop_id: cropData.id,
-        image_url: publicUrl || uploadData?.path || null,
-        plant_id_response: analysis.plantIdAnalysis,
-        ai_recommendations: analysis.aiRecommendations,
-        is_healthy: analysis.plantIdAnalysis?.isHealthy ?? null,
-        confidence_level: analysis.aiRecommendations?.confidenceLevel ?? null
-      })
-      .select()
-      .single();
-
-    if (analysisError) {
-      console.error('Saving analysis error:', analysisError);
-      return res.status(400).json({ success: false, error: analysisError.message });
+    // 5) Save analysis results
+    let analysisData = null;
+    if (analysis.plantIdAnalysis || analysis.aiRecommendations) {
+      const { data, error } = await supabase
+        .from('disease_analyses')
+        .insert({
+          crop_id: cropData.id,
+          image_url: publicUrl || uploadData?.path || null,
+          plant_id_response: analysis.plantIdAnalysis,
+          ai_recommendations: analysis.aiRecommendations?.response,
+          is_healthy: analysis.plantIdAnalysis?.isHealthy ?? null,
+          confidence_level: analysis.aiRecommendations?.confidenceLevel ?? null
+        })
+        .select()
+        .single();
+      if (!error) analysisData = data;
     }
 
     return res.status(201).json({
@@ -159,7 +154,6 @@ const addCropAndDiagnose = async (req, res, next) => {
 
 /**
  * Add a new crop (image optional)
- * - If req.file present, upload and set image_url
  */
 const addCrop = async (req, res, next) => {
   try {
@@ -171,7 +165,6 @@ const addCrop = async (req, res, next) => {
       });
     }
 
-    // Insert crop first
     const { data: cropData, error: cropError } = await supabase
       .from('crops')
       .insert({
@@ -191,12 +184,10 @@ const addCrop = async (req, res, next) => {
       });
     }
 
-    // If an image was uploaded, store it and update crop.image_url
     if (req.file) {
       const filename = `${req.user.id}/${cropData.id}/${Date.now()}-${req.file.originalname}`;
-
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('crop-images')
+        .from('cropsImages')
         .upload(filename, req.file.buffer, {
           contentType: req.file.mimetype,
           upsert: false
@@ -204,23 +195,13 @@ const addCrop = async (req, res, next) => {
 
       if (uploadError) {
         console.error('Supabase upload error on addCrop:', uploadError);
-        // Not failing the whole request — return informative response
         return res.status(400).json({ success: false, error: uploadError.message });
       }
 
-      const publicUrl = getPublicUrlForFile('crop-images', filename) || uploadData?.path || null;
+      const publicUrl = getPublicUrlForFile('cropsImages', filename) || uploadData?.path || null;
 
       if (publicUrl) {
-        const { error: updErr } = await supabase
-          .from('crops')
-          .update({ image_url: publicUrl })
-          .eq('id', cropData.id);
-
-        if (updErr) {
-          console.error('Failed to update crop with image_url:', updErr);
-        }
-
-        // return updated crop data to client
+        await supabase.from('crops').update({ image_url: publicUrl }).eq('id', cropData.id);
         return res.status(201).json({
           success: true,
           data: { ...cropData, image_url: publicUrl }
@@ -228,11 +209,7 @@ const addCrop = async (req, res, next) => {
       }
     }
 
-    // No file case - return crop as is
-    return res.status(201).json({
-      success: true,
-      data: cropData
-    });
+    return res.status(201).json({ success: true, data: cropData });
   } catch (error) {
     console.error('addCrop unexpected error:', error);
     return next(error);
@@ -251,38 +228,25 @@ const getCrops = async (req, res, next) => {
       .order('created_at', { ascending: false });
 
     if (error) {
-      return res.status(400).json({
-        success: false,
-        error: error.message
-      });
+      return res.status(400).json({ success: false, error: error.message });
     }
 
-    return res.status(200).json({
-      success: true,
-      data
-    });
+    return res.status(200).json({ success: true, data });
   } catch (error) {
     return next(error);
   }
 };
 
 /**
- * Analyze crop disease - supports:
- * - new uploaded file (req.file) OR
- * - falling back to crop.image_url (downloaded and converted to buffer)
+ * Analyze disease
  */
 const analyzeDisease = async (req, res, next) => {
   try {
     const { cropId } = req.body;
-
     if (!cropId) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing crop ID'
-      });
+      return res.status(400).json({ success: false, error: 'Missing crop ID' });
     }
 
-    // Get crop details
     const { data: cropData, error: cropError } = await supabase
       .from('crops')
       .select('*')
@@ -290,104 +254,105 @@ const analyzeDisease = async (req, res, next) => {
       .single();
 
     if (cropError || !cropData) {
-      return res.status(404).json({
-        success: false,
-        error: 'Crop not found'
-      });
+      return res.status(404).json({ success: false, error: 'Crop not found' });
     }
 
-    // Ensure the user owns the crop
     if (cropData.farmer_id !== req.user.id) {
-      return res.status(403).json({
-        success: false,
-        error: 'Unauthorized access to crop'
-      });
+      return res.status(403).json({ success: false, error: 'Unauthorized access to crop' });
     }
 
     let bufferToAnalyze = null;
     let imagePublicUrl = cropData.image_url || null;
 
     if (req.file) {
-      // Upload new image and update crop.image_url
       const filename = `${req.user.id}/${cropId}/${Date.now()}-${req.file.originalname}`;
-
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('crop-images')
+        .from('cropsImages')
         .upload(filename, req.file.buffer, {
           contentType: req.file.mimetype,
           upsert: false
         });
 
       if (uploadError) {
-        console.error('upload error in analyzeDisease:', uploadError);
         return res.status(400).json({ success: false, error: uploadError.message });
       }
 
-      imagePublicUrl = getPublicUrlForFile('crop-images', filename) || uploadData?.path || null;
-
-      // update crop with new image url
+      imagePublicUrl = getPublicUrlForFile('cropsImages', filename) || uploadData?.path || null;
       if (imagePublicUrl) {
-        await supabase
-          .from('crops')
-          .update({ image_url: imagePublicUrl })
-          .eq('id', cropId);
+        await supabase.from('crops').update({ image_url: imagePublicUrl }).eq('id', cropId);
       }
 
       bufferToAnalyze = req.file.buffer;
     } else if (cropData.image_url) {
-      // fetch image from public URL and convert to buffer so analyzer can use it
       try {
         const resp = await axios.get(cropData.image_url, { responseType: 'arraybuffer' });
         bufferToAnalyze = Buffer.from(resp.data);
-      } catch (err) {
-        console.error('Failed to fetch existing crop image for analysis:', err);
+      } catch {
         return res.status(400).json({
           success: false,
           error: 'Failed to fetch existing crop image. Please upload a new image.'
         });
       }
     } else {
-      return res.status(400).json({
-        success: false,
-        error: 'No crop image available for analysis. Please upload one.'
+      return res.status(400).json({ success: false, error: 'No crop image available' });
+    }
+
+    let analysis = { plantIdAnalysis: null, aiRecommendations: null };
+    try {
+      analysis = await plantAnalyzer.analyzeDiseaseImage(bufferToAnalyze, {
+        cropType: cropData.crop_name,
+        location: req.user.location,
+        season: getCurrentSeason()
       });
+    } catch (err) {
+      console.error('Plant.id analysis failed in analyzeDisease:', err.message);
     }
 
-    // Perform analysis (bufferToAnalyze is a Buffer)
-    const analysis = await plantAnalyzer.analyzeDiseaseImage(bufferToAnalyze, {
-      cropType: cropData.crop_name,
-      location: req.user.location,
-      season: getCurrentSeason()
-    });
+    try {
+  // 🧩 Debug log before insert
+  console.log('🧩 Attempting to insert into disease_analyses with payload:', {
+    crop_id: cropId,
+    image_url: imagePublicUrl || null,
+    plant_id_response: analysis.plantIdAnalysis,
+    ai_recommendations: analysis.aiRecommendations,
+    is_healthy: analysis.plantIdAnalysis?.isHealthy?.binary ?? null,
+    confidence_level: analysis.plantIdAnalysis?.isHealthy?.probability ?? null,
+    analyzed_at: new Date().toISOString()
+  });
 
-    // Save analysis results to DB
-    const { data: analysisData, error: analysisError } = await supabase
-      .from('disease_analyses')
-      .insert({
-        crop_id: cropId,
-        image_url: imagePublicUrl || null,
-        plant_id_response: analysis.plantIdAnalysis,
-        ai_recommendations: analysis.aiRecommendations,
-        is_healthy: analysis.plantIdAnalysis?.isHealthy ?? null,
-        confidence_level: analysis.aiRecommendations?.confidenceLevel ?? null
-      })
-      .select()
-      .single();
+  // 🧠 Perform the insert
+  const { data: analysisData, error: analysisError } = await supabase
+    .from('disease_analyses')
+    .insert({
+      crop_id: cropId,
+      image_url: imagePublicUrl || null,
+      plant_id_response: analysis.plantIdAnalysis,
+      ai_recommendations: analysis.aiRecommendations,
+      is_healthy: analysis.plantIdAnalysis?.isHealthy?.binary ?? null,
+      confidence_level: analysis.plantIdAnalysis?.isHealthy?.probability ?? null,
+      analyzed_at: new Date().toISOString()
+    })
+    .select()
+    .single();
 
-    if (analysisError) {
-      console.error('Failed saving analysis in analyzeDisease:', analysisError);
-      return res.status(400).json({ success: false, error: analysisError.message });
-    }
+  // 🧾 Debug log after insert attempt
+  if (analysisError) {
+    console.error('❌ Disease analyses insert error:', analysisError.message);
+    console.error('🔍 Full error object:', analysisError);
+    return res.status(400).json({ success: false, error: analysisError.message });
+  }
 
-    return res.status(200).json({
-      success: true,
-      data: {
-        analysis,
-        storedAnalysis: analysisData
-      }
-    });
+  console.log('✅ Disease analyses insert success:', analysisData);
+
+  return res.status(200).json({
+    success: true,
+    data: { analysis, storedAnalysis: analysisData }
+  });
+} catch (error) {
+  console.error('💥 Unexpected analyzeDisease error:', error);
+  return next(error);
+}
   } catch (error) {
-    console.error('analyzeDisease unexpected error:', error);
     return next(error);
   }
 };
@@ -405,48 +370,30 @@ const getAnalysisHistory = async (req, res, next) => {
       .order('analyzed_at', { ascending: false });
 
     if (error) {
-      return res.status(400).json({
-        success: false,
-        error: error.message
-      });
+      return res.status(400).json({ success: false, error: error.message });
     }
 
-    return res.status(200).json({
-      success: true,
-      data
-    });
+    return res.status(200).json({ success: true, data });
   } catch (error) {
     return next(error);
   }
 };
 
-// Delete crop by ID
+// Delete crop
 const deleteCrop = async (req, res) => {
-  const { id } = req.params;
-
+  const { cropId } = req.params;
   try {
-    // Delete from crops table
-    const { error } = await supabase
-      .from('crops')
-      .delete()
-      .eq('id', id);
-
+    const { error } = await supabase.from('crops').delete().eq('id', cropId);
     if (error) throw error;
-
-    return res.status(200).json({
-      success: true,
-      message: 'Crop deleted successfully',
-    });
+    return res.status(200).json({ success: true, message: 'Crop deleted successfully' });
   } catch (err) {
-    console.error('Delete crop error:', err.message);
     return res.status(500).json({
       success: false,
       message: 'Failed to delete crop',
-      error: err.message,
+      error: err.message
     });
   }
 };
-
 
 module.exports = {
   handleMulterUpload,
