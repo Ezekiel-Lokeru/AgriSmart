@@ -1,8 +1,7 @@
-// controllers/weather.controller.js
 const axios = require("axios");
-const advisoryAI = require("../apis/openai");
+const CropadvisoryAI = require("../apis/gemini");
+const advisoryAI = new CropadvisoryAI();
 
-// Fetch current + forecast weather and add AI recommendations
 exports.getWeather = async (req, res) => {
   try {
     const { location } = req.body;
@@ -15,24 +14,21 @@ exports.getWeather = async (req, res) => {
       });
     }
 
-    //Fetch weather from OpenWeather API
-    const weatherResponse = await axios.get(
-      `https://api.openweathermap.org/data/2.5/forecast`,
-      {
-        params: {
-          q: location,
-          units: "metric",
-          appid: process.env.OPENWEATHER_KEY,
-        },
-      }
-    );
+    // Build the full URL manually for clarity
+    const url = `https://api.openweathermap.org/data/2.5/forecast?q=${location}&units=metric&appid=${process.env.OPENWEATHER_API_KEY}`;
+    
+    // 🔍 Log the exact request being made
+    console.log("Fetching weather from:", url);
+    console.log("Using OpenWeather key:", process.env.OPENWEATHER_API_KEY ? "Loaded ✅" : "Missing ❌");
 
-    //Extract current conditions + 5-day forecast
+    // Fetch weather data
+    const weatherResponse = await axios.get(url);
+
     const weatherData = weatherResponse.data;
-    const current = weatherData.list[0]; // first item = current
-    const forecast = weatherData.list.slice(1, 6 * 5); // next 5 days (3hr steps → 40 entries)
+    const current = weatherData.list[0];
+    const forecast = weatherData.list.slice(1, 6 * 5);
 
-    //AI Recommendations (with safe fallback)
+    // AI Recommendations
     let recommendations = "AI recommendations unavailable at the moment.";
     try {
       recommendations = await advisoryAI.processWeatherRecommendations(
@@ -43,7 +39,6 @@ exports.getWeather = async (req, res) => {
       console.error("AI recommendation failed:", aiError.message);
     }
 
-    //Respond to frontend
     return res.json({
       success: true,
       error: false,
@@ -53,7 +48,7 @@ exports.getWeather = async (req, res) => {
       recommendations,
     });
   } catch (err) {
-    console.error("Error fetching weather:", err.message);
+    console.error("Error fetching weather:", err.response?.data || err.message);
     return res.status(500).json({
       success: false,
       error: true,
