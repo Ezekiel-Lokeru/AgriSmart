@@ -11,12 +11,21 @@ const cors = require("cors");
 const app = express();
 
 // --- CORS configuration ---
-let corsOptions = {
-  origin: [
-    `http://localhost:${process.env['PORT']}`,
-    `https://192.168.68.21:${process.env['PORT']}`,
-    "http://localhost:5173"
-  ],
+const allowedOrigins = [
+  "http://localhost:5173", // local dev
+  "https://agri-smart-six.vercel.app/", // Vercel frontend
+  "https://agrismart-1-8crs.onrender.com/api", // Render frontend
+
+];
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
