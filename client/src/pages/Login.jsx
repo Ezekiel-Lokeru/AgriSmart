@@ -14,52 +14,64 @@ export default function Login() {
     setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    try {
-      const res = await api.post("/v1/auth/login", {
-        email: form.email,
-        password: form.password,
-      });
-      const token =
-        res.data?.session?.access_token || res.data?.user?.access_token;
-      if (token) {
-        localStorage.setItem("access_token", token);
-        try {
-          const profileRes = await api.get("/v1/profile/get", {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          const role = profileRes.data?.data?.role;
-          if (role === "admin") {
-            navigate("/admin");
-          } else {
-            navigate("/dashboard");
-          }
-        } catch {
-          navigate("/dashboard");
-        }
-      } else {
-        navigate("/dashboard");
-      }
-    } catch (err) {
-      let backendError = "Login failed";
-      if (err.response?.data) {
-        if (err.response.data.error) {
-          backendError = err.response.data.error;
-        } else if (err.response.data.message) {
-          backendError = err.response.data.message;
-        } else {
-          backendError = JSON.stringify(err.response.data);
-        }
-      }
-      if (!backendError || backendError === "{}") {
-        backendError =
-          "Login failed. Please check your credentials or try again.";
-      }
-      setError(backendError);
-      console.error("Login error:", err, err.response?.data);
+  e.preventDefault();
+  setError("");
+
+  try {
+    // Step 1: Login
+    const res = await api.post("/v1/auth/login", {
+      email: form.email,
+      password: form.password,
+    });
+
+    const token =
+      res.data?.session?.access_token || res.data?.user?.access_token;
+
+    if (!token) {
+      setError("Login failed — missing access token");
+      return;
     }
-  };
+
+    // Store token
+    localStorage.setItem("access_token", token);
+
+    // Step 2: Get profile (includes 'role' from farmer_profiles)
+    const profileRes = await api.get("/v1/profile/get", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const profile = profileRes.data?.data;
+
+    if (!profile || !profile.role) {
+      console.warn("⚠️ No role found in profile, defaulting to farmer");
+      navigate("/dashboard");
+      return;
+    }
+
+    // Step 3: Store role in localStorage for global use
+    localStorage.setItem("user_role", profile.role);
+
+    // Step 4: Redirect based on role
+    if (profile.role === "admin") {
+      navigate("/admin");
+    } else {
+      navigate("/dashboard");
+    }
+  } catch (err) {
+    let backendError = "Login failed";
+    if (err.response?.data) {
+      backendError =
+        err.response.data.error ||
+        err.response.data.message ||
+        JSON.stringify(err.response.data);
+    }
+
+    setError(backendError);
+    console.error("Login error:", err.response?.data);
+  }
+};
+
+
 
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2">
