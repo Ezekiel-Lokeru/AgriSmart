@@ -1,0 +1,12 @@
+{
+  "app_name": "AgriSmart",
+  "welcome": "Welcome to    AgriSmart",
+  "home": "Home",
+  "dashboard": "Dashboard",
+  "diagnose_crop": "Diagnose Crop",
+  "add_crop": "Add Crop",
+  "weather": "Weather & Advisory",
+  "contact_us": "Contact Us",
+  "follow_us": "Follow Us",
+  "footer_note": "All rights reserved."
+}

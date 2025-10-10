@@ -1,0 +1,15 @@
+{
+  "app_name": "AgriSmart",
+  "welcome": "Karibu AgriSmart",
+  "home": "Nyumbani",
+  "dashboard": "Dashibodi",
+  "diagnose_crop": "Tambua Ugonjwa",
+  "add_crop": "Ongeza Mmea",
+  "weather": "Hali ya Hewa na Ushauri",
+  "contact_us": "Wasiliana Nasi",
+  "follow_us": "Tufuate",
+  "footer_note": "Haki zote zimehifadhiwa.",
+  "about": "Kuhusu",
+  "services": "Huduma",
+    "login": "Ingia"
+}
