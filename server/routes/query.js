@@ -1,16 +1,15 @@
-const { queries: { query }} = require('../controllers');
-const { verifyUser } = require('../middlewares');
+const { queries: { query } } = require('../controllers');
 
-// @description a modular function that registers all the query routes
+// @description registers all public query routes
 module.exports = (app, url) => {
-	app.use((req, res, next) => {
-		res.header(
-			"Access-Control-Allow-Headers",
-			"x-access-token, Origin, Content-Type, Accept"
-		);
-		next();
-	});
-	
-	// Query route
-	app.post(`${url}/query`, verifyUser, query);
+  app.use((req, res, next) => {
+    res.header(
+      "Access-Control-Allow-Headers",
+      "Origin, Content-Type, Accept"
+    );
+    next();
+  });
+
+  // Public AI query assistant (no auth)
+  app.post(`${url}/ask`, query);
 };
