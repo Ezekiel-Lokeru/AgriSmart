@@ -1,134 +1,181 @@
-# Samba Master
+# 🌾 Farmer Advisory System (FAS)
 
-Samba Master is a Node.js web application that provides a platform for user authentication, crop management, weather queries, and integration with AI services. The project is structured using the MVC (Model-View-Controller) pattern and leverages Express.js for routing, EJS for templating, and Supabase for backend data management.
+The **Farmer Advisory System (FAS)** is a full-stack web application
+designed to empower farmers with digital tools for managing crops,
+accessing expert advice, monitoring weather conditions, and enabling
+admins to oversee platform operations efficiently.
 
-## Features
+------------------------------------------------------------------------
 
-- **User Authentication**: Secure login and registration system.
-- **Crop Management**: Add, view, and manage crop data.
-- **Weather Queries**: Fetch weather information for crops or locations.
-- **AI Integration**: Connects to OpenAI for advanced features.
-- **Profile Management**: User profile viewing and editing.
-- **Error Handling**: Custom error pages and middleware.
+## 🚀 Features
 
-## Project Structure
+### 👨‍🌾 Farmer Dashboard
 
+-   Add, edit, and manage crop records.
+-   View crop health diagnosis and recommendations.
+-   Access real-time weather data for better planning.
+-   Personalized dashboard with insights and reports.
+
+### 🧑‍💼 Admin Dashboard
+
+-   Manage users and monitor platform activity.
+-   Add or remove crops, manage services, and view statistics.
+-   Access analytics and usage metrics.
+-   Role-based access (Admin vs. Farmer).
+
+### 🔒 Authentication & Authorization
+
+-   Secure login and registration.
+-   Token-based session handling (via Supabase/Custom API).
+-   Role-based navigation: Admins see `/admin`, Farmers see
+    `/dashboard`.
+
+### 🌦️ Integrated Services
+
+-   Weather information via API.
+-   Crop health prediction integration (future feature).
+-   Multi-language support via `react-i18next`.
+
+------------------------------------------------------------------------
+
+## 🧩 Tech Stack
+
+  Layer              Technology
+  ------------------ ----------------------------------
+  Frontend           React.js (with Tailwind CSS 4.x)
+  Routing            React Router v6
+  Backend            Express.js (REST API)
+  Database           Supabase (PostgreSQL)
+  Styling            Tailwind CSS
+  Auth               Supabase Auth / JWT
+  State Management   React Hooks
+  API Calls          Axios
+
+------------------------------------------------------------------------
+
+## ⚙️ Installation
+
+### 1. Clone the Repository
+
+``` bash
+git clone https://github.com/yourusername/farmer-advisory-system.git
+cd farmer-advisory-system
 ```
-├── app.js                  # Main application entry point
-├── package.json            # Project metadata and dependencies
-├── apis/                   # API integrations (OpenAI, Plant API)
-│   ├── index.js
-│   ├── openai.js
-│   └── plant.js
-├── configs/                # Configuration files
-│   ├── app.js
-│   ├── index.js
-│   └── supabase.js
-├── controllers/            # Route controllers (business logic)
-│   ├── auth.js
-│   ├── crops.js
-│   ├── error.js
-│   ├── index.js
-│   ├── profile.js
-│   ├── query.js
-│   ├── supabase.sql
-│   └── weather.js
-├── middlewares/            # Express middlewares
-│   ├── auth.js
-│   └── index.js
-├── routes/                 # Express route definitions
-│   ├── auth.js
-│   ├── crops.js
-│   ├── errors.js
-│   ├── index.js
-│   ├── profile.js
-│   ├── query.js
-│   └── weather.js
-├── views/                  # EJS templates for UI
-│   ├── 404.ejs
-│   ├── 500.ejs
-│   ├── 502.ejs
-│   ├── pages/
-│   ├── partials/
-│   └── ...
-└── LICENSE
+
+### 2. Install Dependencies
+
+``` bash
+npm install
 ```
 
-## Getting Started
+### 3. Set Up Environment Variables
 
-### Prerequisites
-- Node.js (v14 or higher recommended)
-- npm (Node Package Manager)
+Create a `.env` file in the root directory and add:
 
-### Installation
-1. Clone the repository:
-   ```sh
-   git clone <repository-url>
-   cd samba-master
-   ```
-2. Install dependencies:
-   ```sh
-   npm install
-   ```
-3. Configure environment variables and Supabase credentials in `configs/supabase.js`.
-
-### Running the Application
-```sh
-node app.js
+``` env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_KEY=your_supabase_anon_key
+VITE_API_BASE_URL=http://localhost:5000/api
 ```
-The server will start on the port specified in your configuration (default: 3000).
 
-## Folder Details
+### 4. Start the Development Server
 
-### apis/
-- **openai.js**: Handles integration with OpenAI APIs for AI-powered features.
-- **plant.js**: Interfaces with plant-related APIs for crop data.
-- **index.js**: API aggregator.
+``` bash
+npm run dev
+```
 
-### configs/
-- **app.js**: Application-level configuration.
-- **supabase.js**: Supabase client and credentials setup.
-- **index.js**: Configuration aggregator.
+The app should now be running on **http://localhost:5173** 🎉
 
-### controllers/
-- **auth.js**: Handles user authentication logic.
-- **crops.js**: Manages crop-related operations.
-- **error.js**: Error handling logic.
-- **profile.js**: User profile management.
-- **query.js**: Handles search and query logic.
-- **weather.js**: Weather data fetching and processing.
-- **supabase.sql**: SQL scripts for Supabase setup.
+------------------------------------------------------------------------
 
-### middlewares/
-- **auth.js**: Authentication middleware for route protection.
-- **index.js**: Middleware aggregator.
+## 🧠 Project Structure
 
-### routes/
-- **auth.js**: Authentication routes.
-- **crops.js**: Crop management routes.
-- **errors.js**: Error handling routes.
-- **profile.js**: User profile routes.
-- **query.js**: Search/query routes.
-- **weather.js**: Weather-related routes.
-- **index.js**: Main router.
+    src/
+    │
+    ├── components/
+    │   ├── admin/
+    │   │   ├── AdminDashboard.jsx
+    │   │   ├── AdminLayout.jsx
+    │   │   └── AdminUsers.jsx
+    │   ├── NavbarLayout.jsx
+    │   ├── SidebarLayout.jsx
+    │   ├── ProtectedRoute.jsx
+    │
+    ├── pages/
+    │   ├── Home.jsx
+    │   ├── Login.jsx
+    │   ├── Register.jsx
+    │   ├── Dashboard.jsx
+    │   ├── Profile.jsx
+    │   ├── Settings.jsx
+    │   ├── AddCrop.jsx
+    │   ├── Services.jsx
+    │   └── About.jsx
+    │
+    ├── services/
+    │   └── supabaseClient.js
+    │
+    ├── i18n.js
+    ├── App.jsx
+    └── index.css
 
-### views/
-- **404.ejs, 500.ejs, 502.ejs**: Error pages.
-- **pages/**: Main application pages (home, about, logon, etc.).
-- **partials/**: Reusable UI components (header, footer, etc.).
-- **apps/**: App-specific partials.
-- **edits/**: Edit forms and pages.
+------------------------------------------------------------------------
 
-## License
+## 🧩 Key Routing Logic
 
-This project is licensed under the terms of the LICENSE file provided in the repository.
+-   `/` → Home page (public)
+-   `/login` → User login
+-   `/register` → User registration
+-   `/dashboard` → Farmer dashboard (protected)
+-   `/admin` → Admin dashboard (role-restricted)
+-   `/admin/users` → Manage users (admin-only)
 
-## Contributing
+Role-based redirects ensure admins and farmers see their respective
+dashboards.
 
-Contributions are welcome! Please open issues or submit pull requests for improvements or bug fixes.
+------------------------------------------------------------------------
 
-## Acknowledgements
-- [Express.js](https://expressjs.com/)
-- [Supabase](https://supabase.com/)
-- [OpenAI](https://openai.com/)
-- [EJS](https://ejs.co/)
+## 🧰 Available Scripts
+
+  Command             Description
+  ------------------- --------------------------
+  `npm run dev`       Start development server
+  `npm run build`     Build for production
+  `npm run preview`   Preview production build
+
+------------------------------------------------------------------------
+
+## 🧪 Future Improvements
+
+-   AI-based crop health prediction.
+-   Offline mode for farmers in low-connectivity regions.
+-   SMS notifications for weather and advisory alerts.
+-   Community Q&A forum.
+
+------------------------------------------------------------------------
+
+## 🤝 Contributing
+
+Contributions are welcome! Please fork this repository and submit a pull
+request for review.
+
+------------------------------------------------------------------------
+
+## 🪪 License
+
+This project is licensed under the **MIT License** --- feel free to use
+and modify it for educational or commercial purposes.
+
+------------------------------------------------------------------------
+
+## 👨‍💻 Author
+
+**Ezekiel Lokeru**\
+📍 Kenya\
+💼 Full-stack Developer \| MERN \| Data Science Enthusiast\
+🔗 [GitHub](https://github.com/yourusername) \|
+[LinkedIn](https://linkedin.com/in/yourprofile)
+
+------------------------------------------------------------------------
+
+*"Empowering farmers through technology."*
