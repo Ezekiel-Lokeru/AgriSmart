@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const services = [
   { title: "Crop Management", path: "/services#crop" },
@@ -13,6 +14,7 @@ const services = [
 ];
 
 export default function Navbar() {
+  const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const navigate = useNavigate();
 
@@ -36,7 +38,7 @@ export default function Navbar() {
   return (
     <nav className="bg-green-700 text-white px-6 py-4 flex justify-between items-center shadow-md">
       {/* Left side: Logo */}
-      <div className="text-2xl font-bold tracking-wide cursor-pointer">AgriSmart</div>
+      <div className="text-2xl font-bold tracking-wide cursor-pointer">{t("AgriSmart")}</div>
 
        <form
         onSubmit={handleSearch}
@@ -58,10 +60,10 @@ export default function Navbar() {
       </form>
 
       <div className="hidden md:flex space-x-6 font-medium">
-        <a href="/" className="hover:text-green-200 transition">Home</a>
-        <a href="/about" className="hover:text-green-200 transition">About</a>
-        <a href="/services" className="hover:text-green-200 transition">Services</a>
-        <a href="/login" className="hover:text-green-200 transition">Login</a>
+        <a href="/" className="hover:text-green-200 transition">{t("Home")}</a>
+        <a href="/about" className="hover:text-green-200 transition">{t("About")}</a>
+        <a href="/services" className="hover:text-green-200 transition">{t("Services")}</a>
+        <a href="/login" className="hover:text-green-200 transition">{t("Login")}</a>
       </div>
     </nav>
   );

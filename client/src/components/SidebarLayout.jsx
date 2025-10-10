@@ -1,5 +1,6 @@
 import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 export default function SidebarLayout() {
   return (
@@ -8,8 +9,9 @@ export default function SidebarLayout() {
       <aside className="w-64 bg-green-700 text-white">
         <Sidebar />
       </aside>
-
-      {/* Content directly next to sidebar */}
+      <div className="absolute top-4 right-4 z-50">
+          <LanguageSwitcher />
+        </div>
       <main className="flex-1 p-6">
         <Outlet />
       </main>
