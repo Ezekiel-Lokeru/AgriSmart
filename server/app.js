@@ -14,8 +14,6 @@ const app = express();
 const allowedOrigins = [
   "http://localhost:5173", // local dev
   "https://agri-smart-six.vercel.app/", // Vercel frontend
-  "https://agrismart-1-8crs.onrender.com/api", // Render frontend
-
 ];
 
 const corsOptions = {
