@@ -5,8 +5,10 @@ import weatherImg from "../assets/weather.jpg";
 import advisoryImg from "../assets/diagnose.jpg";
 import recordsImg from "../assets/records.jpg";
 import servicesImg from "../assets/farmServices.jpg";
+import Footer from "../components/Footer";
 // eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
+import FloatingChat from "../components/FloatingChat";
 
 // Demo images for services (replace with your own later)
 const services = [
@@ -46,14 +48,14 @@ const Home = () => {
           Empowering Farmers with Smart Tools
         </h1>
         <p className="text-lg sm:text-xl mb-6 max-w-2xl mx-auto">
-          Get real-time weather insights, crop advisory, and reliable support —
-          all in one platform tailored for farmers.
+          Get real-time weather insights, crop advisory, and reliable support all in 
+          one platform tailored for farmers.
         </p>
         <Link
           to="/register"
           className="bg-white text-green-700 font-semibold px-6 py-3 rounded-lg shadow hover:bg-gray-100 transition"
         >
-          Get Started
+         Get Started
         </Link>
       </section>
 
@@ -103,14 +105,15 @@ const Home = () => {
           </Link>
         </div>
       </section>
+      <FloatingChat />
 
       {/* About Preview */}
       <section className="py-16 px-6 bg-white text-center">
-        <h2 className="text-2xl font-bold text-green-700 mb-6">About Us</h2>
+        <h2 className="text-2xl font-bold text-green-700 mb-6">About Use</h2>
         <p className="max-w-3xl mx-auto text-gray-700 leading-relaxed mb-6">
-          Our mission is to make modern farming tools accessible to every
-          farmer. We provide real-time data, AI-powered advisory, and strong
-          support systems to help farmers thrive in changing conditions.
+          Our mission is to make modern farming tools accessible to every farmer. 
+          We provide real-time data, AI-powered advisory, 
+          and strong support systems to help farmers thrive in changing conditions.
         </p>
         <Link
           to="/about"
@@ -139,19 +142,7 @@ const Home = () => {
           </Link>
         </div>
       </section>
-
-      {/* Call to Action Banner */}
-      <section className="bg-green-600 text-white py-12 px-6 text-center">
-        <h2 className="text-2xl sm:text-3xl font-bold mb-4">
-          Ready to take your farming to the next level?
-        </h2>
-        <Link
-          to="/register"
-          className="bg-white text-green-700 font-semibold px-6 py-3 rounded-lg shadow hover:bg-gray-100 transition"
-        >
-          Join Now
-        </Link>
-      </section>
+      <Footer />
     </div>
   );
 };
