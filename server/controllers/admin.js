@@ -6,12 +6,25 @@ const getUsers = async (req, res, next) => {
     const { data, error } = await supabase
       .from('farmer_profiles')
       .select('id, name, email, role, active');
-    if (error) return res.status(400).json({ success: false, error: error.message });
-    return res.status(200).json({ success: true, data });
+
+    if (error)
+      return res.status(400).json({ success: false, error: error.message });
+
+    return res.status(200).json({
+      success: true,
+      message: 'All users fetched successfully',
+      data,
+    });
   } catch (error) {
-    next(error);
+    console.error('Error fetching users:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch users',
+      error: error.message,
+    });
   }
 };
+
 
 // Deactivate user
 const deactivateUser = async (req, res, next) => {

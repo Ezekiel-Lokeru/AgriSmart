@@ -64,18 +64,36 @@ class CropAdvisoryAI {
    * General farming queries
    */
   async processFarmingQuery(query, context = {}) {
-    try {
-      const prompt = `${this.generateSystemPrompt(context)}\n\nFarmer's question: ${query}`;
+  try {
+    const prompt = `${this.generateSystemPrompt(context)}\n\nFarmer's question: ${query}`;
 
-      const response = await this.defaultModel.generateContent({
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-      });
+    let attempt = 0;
+    let response;
 
-      return { response: this.cleanResponse(response.response.text()) };
-    } catch (error) {
-      throw new Error(`Error processing farming query: ${error.message}`);
+    while (attempt < 3) {
+      try {
+        response = await this.advancedModel.generateContent({
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+        });
+        break; // success
+      } catch (err) {
+        if (err.message.includes('503') && attempt < 2) {
+          attempt++;
+          console.warn(`Retrying Gemini request (attempt ${attempt})...`);
+          await new Promise(r => setTimeout(r, 2000)); // wait 2 seconds
+          continue;
+        }
+        throw err;
+      }
     }
+
+    return { response: this.cleanResponse(response.response.text()) };
+
+  } catch (error) {
+    throw new Error(`Error processing farming query: ${error.message}`);
   }
+}
+
 
   /**
    * Crop disease diagnosis with Plant.id context
