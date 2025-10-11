@@ -1,19 +1,18 @@
 require('dotenv').config();
 console.log('DEBUG OPENWEATHER_API_KEY:', process.env.OPENWEATHER_API_KEY ? '✅ loaded' : '❌ missing');
-console.log('DEBUG (first 6 chars):', (process.env.OPENWEATHER_API_KEY || '').slice(0,6).replace(/./g, '*'));
 
 const express = require("express");
 const path = require("path");
 const bodyParser = require("body-parser");
-const cookieParser = require('cookie-parser');
+const cookieParser = require("cookie-parser");
 const cors = require("cors");
 
 const app = express();
 
 // --- CORS configuration ---
 const allowedOrigins = [
-  "http://localhost:5173", // local dev
-  "https://agri-smart-six.vercel.app/", // Vercel frontend
+  "http://localhost:5173",        // Local dev
+  "https://agri-smart-six.vercel.app" // Deployed frontend
 ];
 
 const corsOptions = {
@@ -21,22 +20,29 @@ const corsOptions = {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.warn(`🚫 Blocked by CORS: ${origin}`);
       callback(new Error("Not allowed by CORS"));
     }
   },
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE"],
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"],
 };
 app.use(cors(corsOptions));
 app.use(cookieParser());
 
-// --- Health check route ---
+// --- Logging for debugging ---
+app.use((req, res, next) => {
+  console.log(`➡️ ${req.method} ${req.originalUrl}`);
+  next();
+});
+
+// --- Health check ---
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-// --- Default home route (fix) ---
+// --- Default home route ---
 app.get('/', (req, res) => {
   res.status(200).json({
     success: true,
@@ -54,7 +60,7 @@ app.get('/service-worker.js', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'js', 'service-worker.js'));
 });
 
-// --- Load routes ---
+// --- Load all routes ---
 require('./routes')(app);
 
 module.exports = app;
